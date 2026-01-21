@@ -2,9 +2,14 @@
 Sidebar component with settings and controls
 """
 
+import os
 import streamlit as st
 import asyncio
 from pathlib import Path
+
+# API keys from environment
+DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
+JINA_API_KEY = os.environ.get("JINA_API_KEY", "")
 
 
 def render_sidebar():
@@ -17,7 +22,7 @@ def render_sidebar():
         # Tab navigation
         tab = st.radio(
             "Section",
-            ["📊 Status", "📁 Documents", "🔧 Index", "🔑 API Keys", "⚡ Query"],
+            ["📊 Status", "📁 Documents", "🔧 Index", "⚡ Query"],
             label_visibility="collapsed"
         )
 
@@ -29,8 +34,6 @@ def render_sidebar():
             render_documents_tab(service)
         elif tab == "🔧 Index":
             render_index_tab(service)
-        elif tab == "🔑 API Keys":
-            render_api_keys_tab(service)
         elif tab == "⚡ Query":
             from components.chat import render_query_settings
             render_query_settings()
@@ -38,6 +41,22 @@ def render_sidebar():
 
 def render_status_tab(service):
     """Render status information"""
+
+    # API Keys status
+    st.subheader("API Keys")
+    if DEEPSEEK_API_KEY:
+        st.success(f"DeepSeek: ✅ ...{DEEPSEEK_API_KEY[-8:]}")
+    else:
+        st.error("DeepSeek: ❌ Not set")
+
+    if JINA_API_KEY:
+        st.success(f"Jina: ✅ ...{JINA_API_KEY[-8:]}")
+    else:
+        st.error("Jina: ❌ Not set")
+
+    st.divider()
+
+    # Index status
     st.subheader("Index Status")
 
     stats = service.get_index_stats()
@@ -191,80 +210,3 @@ def run_indexing(service, method):
     st.rerun()
 
 
-def render_api_keys_tab(service):
-    """Render API key configuration"""
-    st.subheader("API Configuration")
-
-    # Load current .env if exists
-    env_path = service.project_path / ".env"
-    current_env = {}
-    if env_path.exists():
-        for line in env_path.read_text().splitlines():
-            if "=" in line and not line.startswith("#"):
-                key, val = line.split("=", 1)
-                current_env[key.strip()] = val.strip()
-
-    # DeepSeek settings
-    st.markdown("### DeepSeek (Chat Model)")
-    deepseek_key = st.text_input(
-        "DEEPSEEK_API_KEY",
-        value=current_env.get("DEEPSEEK_API_KEY", ""),
-        type="password"
-    )
-
-    # Embedding provider selection
-    st.markdown("### Embedding Model")
-    embed_provider = st.selectbox(
-        "Provider",
-        ["OpenAI", "Jina AI", "VoyageAI", "Local (Ollama)"]
-    )
-
-    if embed_provider == "OpenAI":
-        embed_key = st.text_input(
-            "OPENAI_API_KEY",
-            value=current_env.get("OPENAI_API_KEY", ""),
-            type="password"
-        )
-        embed_env_name = "OPENAI_API_KEY"
-    elif embed_provider == "Jina AI":
-        embed_key = st.text_input(
-            "JINA_API_KEY",
-            value=current_env.get("JINA_API_KEY", ""),
-            type="password"
-        )
-        embed_env_name = "JINA_API_KEY"
-        st.info("Jina offers 1M free tokens")
-    elif embed_provider == "VoyageAI":
-        embed_key = st.text_input(
-            "VOYAGE_API_KEY",
-            value=current_env.get("VOYAGE_API_KEY", ""),
-            type="password"
-        )
-        embed_env_name = "VOYAGE_API_KEY"
-    else:
-        embed_key = ""
-        embed_env_name = ""
-        st.info("Configure Ollama URL in settings.yaml")
-
-    # Save button
-    if st.button("Save API Keys", type="primary"):
-        env_content = f"""# GraphRAG API Keys
-DEEPSEEK_API_KEY={deepseek_key}
-EMBEDDING_API_KEY={embed_key}
-"""
-        env_path.write_text(env_content)
-
-        # Update settings.yaml with correct embedding provider
-        settings = service.get_settings()
-        if embed_provider == "OpenAI":
-            settings["models"]["default_embedding_model"]["model_provider"] = "openai"
-            settings["models"]["default_embedding_model"]["model"] = "text-embedding-3-small"
-        elif embed_provider == "Jina AI":
-            settings["models"]["default_embedding_model"]["model_provider"] = "jina_ai"
-            settings["models"]["default_embedding_model"]["model"] = "jina-embeddings-v3"
-        elif embed_provider == "VoyageAI":
-            settings["models"]["default_embedding_model"]["model_provider"] = "voyage"
-            settings["models"]["default_embedding_model"]["model"] = "voyage-2"
-
-        service.save_settings(settings)
-        st.success("Configuration saved!")

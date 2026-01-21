@@ -4,12 +4,17 @@ GraphRAG Service - wrapper for GraphRAG operations
 
 import asyncio
 import logging
+import os
 import shutil
 from pathlib import Path
 from typing import AsyncGenerator
 import yaml
 
 logger = logging.getLogger(__name__)
+
+# API keys from environment
+DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
+JINA_API_KEY = os.environ.get("JINA_API_KEY", "")
 
 
 class GraphRAGService:
@@ -84,13 +89,13 @@ class GraphRAGService:
             yaml.dump(settings, f, default_flow_style=False, allow_unicode=True)
 
     def _default_settings(self) -> dict:
-        """Default settings template for DeepSeek"""
+        """Default settings template for DeepSeek + Jina"""
         return {
             "models": {
                 "default_chat_model": {
                     "type": "chat",
                     "auth_type": "api_key",
-                    "api_key": "${DEEPSEEK_API_KEY}",
+                    "api_key": DEEPSEEK_API_KEY,
                     "model_provider": "deepseek",
                     "model": "deepseek-chat",
                     "api_base": "https://api.deepseek.com",
@@ -101,9 +106,9 @@ class GraphRAGService:
                 "default_embedding_model": {
                     "type": "embedding",
                     "auth_type": "api_key",
-                    "api_key": "${EMBEDDING_API_KEY}",
-                    "model_provider": "openai",
-                    "model": "text-embedding-3-small",
+                    "api_key": JINA_API_KEY,
+                    "model_provider": "jina_ai",
+                    "model": "jina-embeddings-v3",
                 }
             },
             "input": {

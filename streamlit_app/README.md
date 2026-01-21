@@ -34,18 +34,11 @@ cd streamlit_app
 pip install -r requirements.txt
 ```
 
-### 2. Create `.env` file
+### 2. Set environment variables and run
 
 ```bash
-cat > .env << EOF
-DEEPSEEK_API_KEY=sk-your-deepseek-key
-EMBEDDING_API_KEY=your-embedding-key
-EOF
-```
-
-### 3. Run the app
-
-```bash
+export DEEPSEEK_API_KEY="sk-your-deepseek-key"
+export JINA_API_KEY="jina_your-jina-key"
 streamlit run app.py
 ```
 
