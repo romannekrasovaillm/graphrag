@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  graphrag-app:
+    build: .
+    container_name: graphrag-knowledge-base
+    ports:
+      - "8501:8501"
+    volumes:
+      # Persist data
+      - graphrag_data:/data/graphrag_project
+      # Mount local input folder (optional)
+      - ./input:/data/graphrag_project/input
+    environment:
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - EMBEDDING_API_KEY=${EMBEDDING_API_KEY}
+      # Project path inside container
+      - GRAPHRAG_PROJECT_PATH=/data/graphrag_project
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  graphrag_data:

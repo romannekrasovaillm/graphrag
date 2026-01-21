@@ -1,0 +1,84 @@
+"""
+GraphRAG Knowledge Base - Streamlit Interface
+Main application entry point
+"""
+
+import streamlit as st
+from pathlib import Path
+import sys
+
+# Add app to path
+sys.path.insert(0, str(Path(__file__).parent))
+
+from services.graphrag_service import GraphRAGService
+from components.chat import render_chat
+from components.sidebar import render_sidebar
+
+# Page config
+st.set_page_config(
+    page_title="GraphRAG Knowledge Base",
+    page_icon="🔬",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Custom CSS
+st.markdown("""
+<style>
+    .stChatMessage {
+        padding: 1rem;
+    }
+    .status-box {
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    .status-ready { background-color: #d4edda; }
+    .status-indexing { background-color: #fff3cd; }
+    .status-error { background-color: #f8d7da; }
+</style>
+""", unsafe_allow_html=True)
+
+
+def init_session_state():
+    """Initialize session state variables"""
+    defaults = {
+        "messages": [],
+        "service": None,
+        "index_ready": False,
+        "indexing_in_progress": False,
+        "current_method": "local",
+        "project_path": str(Path.home() / "graphrag_project"),
+    }
+    for key, value in defaults.items():
+        if key not in st.session_state:
+            st.session_state[key] = value
+
+
+def main():
+    init_session_state()
+
+    # Initialize service
+    if st.session_state.service is None:
+        st.session_state.service = GraphRAGService(st.session_state.project_path)
+
+    # Sidebar
+    render_sidebar()
+
+    # Main content
+    st.title("🔬 GraphRAG Knowledge Base")
+
+    # Status indicator
+    if st.session_state.indexing_in_progress:
+        st.warning("⏳ Indexing in progress...")
+    elif st.session_state.index_ready:
+        st.success("✅ Index ready - you can start asking questions")
+    else:
+        st.info("📁 Upload documents and run indexing to start")
+
+    # Chat interface
+    render_chat()
+
+
+if __name__ == "__main__":
+    main()
