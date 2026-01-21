@@ -39,7 +39,24 @@ done
 
 echo -e "${GREEN}[1/6]${NC} Installing system dependencies..."
 sudo apt-get update
-sudo apt-get install -y python3.11 python3.11-venv python3-pip git curl
+sudo apt-get install -y python3 python3-venv python3-pip git curl
+
+# Detect Python version
+PYTHON_CMD=""
+for py in python3.12 python3.11 python3.10 python3; do
+    if command -v $py &> /dev/null; then
+        PYTHON_CMD=$py
+        break
+    fi
+done
+
+if [ -z "$PYTHON_CMD" ]; then
+    echo -e "${YELLOW}Python 3.10+ not found. Installing...${NC}"
+    sudo apt-get install -y python3
+    PYTHON_CMD=python3
+fi
+
+echo -e "${GREEN}Using Python: $PYTHON_CMD ($(${PYTHON_CMD} --version))${NC}"
 
 echo -e "${GREEN}[2/6]${NC} Cloning repository..."
 if [ -d "$INSTALL_DIR" ]; then
@@ -55,7 +72,7 @@ fi
 
 echo -e "${GREEN}[3/6]${NC} Setting up Python environment..."
 cd "$INSTALL_DIR/streamlit_app"
-python3.11 -m venv venv
+$PYTHON_CMD -m venv venv
 source venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
