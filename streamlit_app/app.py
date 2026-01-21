@@ -67,6 +67,9 @@ def main():
     if st.session_state.service is None:
         st.session_state.service = GraphRAGService(st.session_state.project_path)
 
+    # Auto-check index status on every page load
+    st.session_state.index_ready = st.session_state.service.is_index_ready()
+
     # Sidebar
     render_sidebar()
 
