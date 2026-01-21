@@ -35,12 +35,11 @@ class GraphRAGService:
 
     def is_index_ready(self) -> bool:
         """Check if index exists and is ready"""
-        artifacts = self.output_path / "artifacts"
-        if not artifacts.exists():
+        if not self.output_path.exists():
             return False
-        # Check for essential files
+        # Check for essential files (GraphRAG stores them directly in output/)
         required = ["entities.parquet", "communities.parquet"]
-        return all((artifacts / f).exists() for f in required)
+        return all((self.output_path / f).exists() for f in required)
 
     def get_document_count(self) -> int:
         """Count documents in input folder"""
@@ -89,31 +88,26 @@ class GraphRAGService:
             yaml.dump(settings, f, default_flow_style=False, allow_unicode=True)
 
     def _default_settings(self) -> dict:
-        """Default settings template for DeepSeek + Jina"""
-        # Get API keys at call time (not module load time)
-        deepseek_key = os.environ.get("DEEPSEEK_API_KEY", "")
-        jina_key = os.environ.get("JINA_API_KEY", "")
-
+        """Default settings template for DeepSeek + Ollama (local embeddings)"""
         return {
             "models": {
                 "default_chat_model": {
                     "type": "openai_chat",
                     "api_key": "${DEEPSEEK_API_KEY}",
-                    "model": "deepseek/deepseek-chat",
+                    "model": "deepseek-chat",
                     "api_base": "https://api.deepseek.com/v1",
+                    "encoding_model": "cl100k_base",
                     "model_supports_json": True,
                     "request_timeout": 300,
-                    "tokens_per_minute": 100000,
-                    "requests_per_minute": 500,
                     "concurrent_requests": 10,
                     "max_retries": 3,
-                    "retry_wait_seconds": 5,
                 },
                 "default_embedding_model": {
                     "type": "openai_embedding",
-                    "api_key": "${JINA_API_KEY}",
-                    "model": "jina-embeddings-v3",
-                    "api_base": "https://api.jina.ai/v1",
+                    "api_key": "ollama",
+                    "model": "nomic-embed-text",
+                    "api_base": "http://localhost:11434/v1",
+                    "encoding_model": "cl100k_base",
                 }
             },
             "input": {
@@ -154,7 +148,8 @@ class GraphRAGService:
         cmd = [
             "graphrag", "index",
             "--root", str(self.project_path),
-            "--method", method
+            "--method", method,
+            "--skip-validation"
         ]
 
         try:
@@ -232,7 +227,7 @@ class GraphRAGService:
             "graphrag", "query",
             "--root", str(self.project_path),
             "--method", method,
-            question
+            "--query", question
         ]
 
         process = await asyncio.create_subprocess_exec(
@@ -271,20 +266,20 @@ class GraphRAGService:
             "indexed": self.is_index_ready()
         }
 
-        artifacts = self.output_path / "artifacts"
-        if artifacts.exists():
+        # GraphRAG stores parquet files directly in output/
+        if self.output_path.exists():
             try:
                 import pandas as pd
 
-                entities_file = artifacts / "entities.parquet"
+                entities_file = self.output_path / "entities.parquet"
                 if entities_file.exists():
                     stats["entities"] = len(pd.read_parquet(entities_file))
 
-                rels_file = artifacts / "relationships.parquet"
+                rels_file = self.output_path / "relationships.parquet"
                 if rels_file.exists():
                     stats["relationships"] = len(pd.read_parquet(rels_file))
 
-                comm_file = artifacts / "communities.parquet"
+                comm_file = self.output_path / "communities.parquet"
                 if comm_file.exists():
                     stats["communities"] = len(pd.read_parquet(comm_file))
 
