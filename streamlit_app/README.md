@@ -2,6 +2,21 @@
 
 Streamlit-based interface for Microsoft GraphRAG with DeepSeek API support.
 
+## Quick Install (One Command)
+
+```bash
+curl -sSL https://raw.githubusercontent.com/romannekrasovaillm/graphrag/claude/rag-system-analysis-12wV0/streamlit_app/install.sh | bash
+```
+
+Or manually:
+
+```bash
+git clone -b claude/rag-system-analysis-12wV0 https://github.com/romannekrasovaillm/graphrag.git
+cd graphrag/streamlit_app
+chmod +x install.sh
+./install.sh
+```
+
 ## Features
 
 - **Chat Interface**: Ask questions about your documents
