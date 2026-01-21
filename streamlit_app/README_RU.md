@@ -1,6 +1,6 @@
 # GraphRAG База Знаний
 
-Веб-интерфейс на Streamlit для Microsoft GraphRAG с поддержкой DeepSeek API.
+Streamlit-интерфейс для Microsoft GraphRAG с DeepSeek API и локальными эмбеддингами Ollama.
 
 ## Что такое GraphRAG?
 
@@ -10,55 +10,57 @@ GraphRAG — это система Retrieval-Augmented Generation (RAG) от Mic
 - Находить **скрытые связи** между сущностями
 - Агрегировать информацию из **множества документов**
 
-## Быстрая установка
+## Быстрый старт
 
-### Одной командой
+### 1. Установить Ollama (локальные эмбеддинги)
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/romannekrasovaillm/graphrag/claude/rag-system-analysis-12wV0/streamlit_app/install.sh | bash
+curl -fsSL https://ollama.com/install.sh | sh
+ollama pull nomic-embed-text
 ```
 
-### Вручную
+### 2. Клонировать и настроить
 
 ```bash
-git clone -b claude/rag-system-analysis-12wV0 https://github.com/romannekrasovaillm/graphrag.git
-cd graphrag/streamlit_app
+git clone -b claude/rag-system-analysis-12wV0 https://github.com/romannekrasovaillm/graphrag.git ~/graphrag-kb
+cd ~/graphrag-kb/streamlit_app
 pip install -r requirements.txt
 ```
 
-## Запуск
+### 3. Запустить
 
 ```bash
-# Установить API ключи
-export DEEPSEEK_API_KEY="sk-ваш-ключ-deepseek"
-export JINA_API_KEY="jina_ваш-ключ-jina"
-
-# Запустить
-cd streamlit_app
-streamlit run app.py
+export DEEPSEEK_API_KEY="sk-ваш-ключ"
+ollama serve &
+streamlit run app.py --server.port=8501
 ```
 
 Открыть: http://localhost:8501
 
-## Получение API ключей
+## Одна команда для Vast.ai / VM
 
-| Провайдер | Ссылка | Примечание |
-|-----------|--------|------------|
-| DeepSeek | https://platform.deepseek.com/ | ~$0.14/1M токенов |
-| Jina AI | https://jina.ai/ | 1M токенов бесплатно |
+```bash
+cd /workspace && ollama serve &>/dev/null & sleep 2 && export DEEPSEEK_API_KEY="sk-ваш-ключ" && pkill -f streamlit; pkill -f cloudflared; cd ~/graphrag-kb/streamlit_app && streamlit run app.py --server.port=8501 --server.address=0.0.0.0 &>/dev/null & sleep 3 && cloudflared tunnel --url http://localhost:8501
+```
 
-## Возможности интерфейса
+## Требования
 
-### Вкладки в сайдбаре
+| Компонент | Назначение | Стоимость |
+|-----------|------------|-----------|
+| DeepSeek API | LLM для извлечения и чата | ~$1-2 за 500 документов |
+| Ollama | Локальные эмбеддинги | Бесплатно |
 
-| Вкладка | Описание |
-|---------|----------|
-| **Status** | Статус API ключей, статистика индекса |
-| **Documents** | Загрузка документов (txt, csv, json, docx) |
-| **Index** | Запуск индексации, настройка параметров |
-| **Query** | Выбор метода поиска |
+Получить DeepSeek API ключ: https://platform.deepseek.com/
 
-### Методы поиска
+## Возможности
+
+- **Чат-интерфейс**: Задавайте вопросы по документам
+- **4 метода поиска**: Local, Global, Drift, Basic
+- **Загрузка документов**: Поддержка .txt, .csv, .json, .docx
+- **Управление индексом**: Создание, обновление, очистка
+- **Локальные эмбеддинги**: Ollama (nomic-embed-text) - бесплатно и быстро
+
+## Методы поиска
 
 | Метод | Когда использовать | Пример вопроса |
 |-------|-------------------|----------------|
@@ -71,83 +73,21 @@ streamlit run app.py
 
 ### 1. Загрузка документов
 
-1. Перейдите на вкладку **Documents**
+1. Перейдите на вкладку **Documents** в сайдбаре
 2. Перетащите файлы или нажмите **Browse files**
 3. Нажмите **Add Documents**
-
-Поддерживаемые форматы: `.txt`, `.csv`, `.json`, `.docx`
 
 ### 2. Индексация
 
 1. Перейдите на вкладку **Index**
 2. Выберите метод:
-   - **Standard** — точнее, но дороже (LLM для всего)
-   - **Fast** — быстрее и дешевле (NLP + LLM)
-3. Настройте типы сущностей (для научных статей рекомендуется: person, organization, concept, method, dataset)
-4. Нажмите **Run Indexing**
+   - **Standard** — точнее, но дороже
+   - **Fast** — быстрее и дешевле (рекомендуется)
+3. Нажмите **Run Indexing**
 
 ### 3. Задавайте вопросы
 
-После завершения индексации чат станет активным. Введите вопрос и получите ответ с учётом всех ваших документов.
-
-## Развёртывание на сервере
-
-### Vast.ai / Облачная VM
-
-```bash
-# 1. Установить
-git clone -b claude/rag-system-analysis-12wV0 https://github.com/romannekrasovaillm/graphrag.git ~/graphrag-kb
-cd ~/graphrag-kb/streamlit_app
-pip install -r requirements.txt
-
-# 2. Установить ключи
-export DEEPSEEK_API_KEY="sk-..."
-export JINA_API_KEY="jina_..."
-
-# 3. Запустить с туннелем (для внешнего доступа)
-pip install cloudflared
-nohup cloudflared tunnel --url http://localhost:8501 > tunnel.log 2>&1 &
-sleep 5
-cat tunnel.log | grep -o 'https://.*\.trycloudflare\.com'
-
-# 4. Запустить приложение
-streamlit run app.py --server.port=8501 --server.address=127.0.0.1
-```
-
-### Systemd сервис (автозапуск)
-
-```bash
-sudo tee /etc/systemd/system/graphrag.service << EOF
-[Unit]
-Description=GraphRAG Knowledge Base
-After=network.target
-
-[Service]
-Type=simple
-User=$USER
-WorkingDirectory=$HOME/graphrag-kb/streamlit_app
-Environment="DEEPSEEK_API_KEY=sk-ваш-ключ"
-Environment="JINA_API_KEY=jina_ваш-ключ"
-ExecStart=/usr/bin/streamlit run app.py --server.port=8501 --server.address=0.0.0.0
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-sudo systemctl daemon-reload
-sudo systemctl enable --now graphrag
-```
-
-## Оценка стоимости
-
-Для 500 научных статей (~5000 страниц):
-
-| Компонент | Стоимость |
-|-----------|-----------|
-| DeepSeek (индексация) | ~$1-2 |
-| Jina embeddings | Бесплатно (до 1M токенов) |
-| **Итого** | **~$1-2** |
+После индексации чат станет активным. Введите вопрос и получите ответ.
 
 ## Архитектура GraphRAG
 
@@ -156,15 +96,15 @@ sudo systemctl enable --now graphrag
     ↓
 [Разбиение на чанки]
     ↓
-[Извлечение сущностей и связей] ← LLM
+[Извлечение сущностей и связей] ← DeepSeek LLM
     ↓
 [Построение графа] ← NetworkX
     ↓
 [Кластеризация] ← Leiden Algorithm
     ↓
-[Генерация отчётов по сообществам] ← LLM
+[Генерация отчётов по сообществам] ← DeepSeek LLM
     ↓
-[Создание эмбеддингов] ← Jina AI
+[Создание эмбеддингов] ← Ollama (локально)
     ↓
 База знаний готова!
 ```
@@ -175,47 +115,54 @@ sudo systemctl enable --now graphrag
 streamlit_app/
 ├── app.py                    # Главное приложение
 ├── components/
-│   ├── chat.py              # Чат-интерфейс
-│   └── sidebar.py           # Боковая панель настроек
+│   ├── chat.py               # Чат-интерфейс
+│   └── sidebar.py            # Боковая панель настроек
 ├── services/
-│   └── graphrag_service.py  # Обёртка над GraphRAG
+│   └── graphrag_service.py   # Обёртка над GraphRAG
 ├── requirements.txt
-├── install.sh               # Скрипт установки
-├── README.md                # Документация (EN)
-└── README_RU.md             # Документация (RU)
+└── README_RU.md
 ```
 
-## Решение проблем
+## Устранение неполадок
 
-### Индексация завершилась, но чат неактивен
+### Ollama не запущен
 
-Обновите страницу (F5) — статус индекса проверяется при загрузке.
-
-### Ошибка "API key not found"
-
-Убедитесь, что переменные окружения установлены **до** запуска:
 ```bash
-echo $DEEPSEEK_API_KEY  # должен показать ключ
+ollama serve &
+ollama pull nomic-embed-text
 ```
 
-### Ошибка при загрузке .docx
+### Индексация зависает
 
-Установите библиотеку:
+Проверьте, отвечает ли Ollama:
 ```bash
-pip install python-docx
+curl http://localhost:11434/v1/embeddings -d '{"model":"nomic-embed-text","input":"test"}' -H "Content-Type: application/json"
 ```
+
+### Ошибка DeepSeek API
+
+Проверьте API ключ:
+```bash
+curl https://api.deepseek.com/chat/completions \
+  -H "Authorization: Bearer $DEEPSEEK_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"deepseek-chat","messages":[{"role":"user","content":"Привет"}]}'
+```
+
+### Чат неактивен после индексации
+
+Обновите страницу (F5).
 
 ### Не хватает памяти
 
-- Используйте метод **Fast** вместо Standard
-- Уменьшите размер чанков в настройках
+- Используйте метод **Fast**
 - Добавьте swap: `sudo fallocate -l 4G /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile`
 
 ## Ссылки
 
 - [Microsoft GraphRAG](https://github.com/microsoft/graphrag)
 - [DeepSeek API](https://platform.deepseek.com/)
-- [Jina AI](https://jina.ai/)
+- [Ollama](https://ollama.com/)
 - [Streamlit](https://streamlit.io/)
 
 ## Лицензия
