@@ -90,25 +90,30 @@ class GraphRAGService:
 
     def _default_settings(self) -> dict:
         """Default settings template for DeepSeek + Jina"""
+        # Get API keys at call time (not module load time)
+        deepseek_key = os.environ.get("DEEPSEEK_API_KEY", "")
+        jina_key = os.environ.get("JINA_API_KEY", "")
+
         return {
             "models": {
                 "default_chat_model": {
-                    "type": "chat",
-                    "auth_type": "api_key",
-                    "api_key": DEEPSEEK_API_KEY,
-                    "model_provider": "deepseek",
-                    "model": "deepseek-chat",
-                    "api_base": "https://api.deepseek.com",
+                    "type": "openai_chat",
+                    "api_key": "${DEEPSEEK_API_KEY}",
+                    "model": "deepseek/deepseek-chat",
+                    "api_base": "https://api.deepseek.com/v1",
                     "model_supports_json": True,
-                    "request_timeout": 180,
-                    "concurrent_requests": 25,
+                    "request_timeout": 300,
+                    "tokens_per_minute": 100000,
+                    "requests_per_minute": 500,
+                    "concurrent_requests": 10,
+                    "max_retries": 3,
+                    "retry_wait_seconds": 5,
                 },
                 "default_embedding_model": {
-                    "type": "embedding",
-                    "auth_type": "api_key",
-                    "api_key": JINA_API_KEY,
-                    "model_provider": "jina_ai",
+                    "type": "openai_embedding",
+                    "api_key": "${JINA_API_KEY}",
                     "model": "jina-embeddings-v3",
+                    "api_base": "https://api.jina.ai/v1",
                 }
             },
             "input": {
