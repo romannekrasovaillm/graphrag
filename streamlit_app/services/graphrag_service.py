@@ -188,31 +188,9 @@ class GraphRAGService:
             method: 'local', 'global', 'drift', or 'basic'
             **kwargs: Additional parameters (top_k, etc.)
         """
-        # Import here to avoid loading everything at startup
-        try:
-            from graphrag.api import query as graphrag_query
-            from graphrag.config.load_config import load_config
-            from graphrag.utils.storage import load_table_from_storage
-
-            config = load_config(self.project_path)
-
-            # Run query
-            result = await graphrag_query(
-                config=config,
-                root=self.project_path,
-                method=method,
-                query=question,
-                streaming=True
-            )
-
-            # Stream response
-            async for chunk in result:
-                yield chunk
-
-        except ImportError:
-            # Fallback to CLI if API not available
-            async for chunk in self._query_via_cli(question, method):
-                yield chunk
+        # Use CLI for reliable query execution
+        async for chunk in self._query_via_cli(question, method):
+            yield chunk
 
     async def _query_via_cli(
         self,
