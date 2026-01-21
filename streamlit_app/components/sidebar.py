@@ -9,7 +9,6 @@ from pathlib import Path
 
 # API keys from environment
 DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
-JINA_API_KEY = os.environ.get("JINA_API_KEY", "")
 
 
 def render_sidebar():
@@ -43,16 +42,22 @@ def render_status_tab(service):
     """Render status information"""
 
     # API Keys status
-    st.subheader("API Keys")
+    st.subheader("API & Services")
     if DEEPSEEK_API_KEY:
         st.success(f"DeepSeek: ✅ ...{DEEPSEEK_API_KEY[-8:]}")
     else:
         st.error("DeepSeek: ❌ Not set")
 
-    if JINA_API_KEY:
-        st.success(f"Jina: ✅ ...{JINA_API_KEY[-8:]}")
-    else:
-        st.error("Jina: ❌ Not set")
+    # Check Ollama
+    import requests
+    try:
+        resp = requests.get("http://localhost:11434/api/tags", timeout=2)
+        if resp.status_code == 200:
+            st.success("Ollama: ✅ Running (local embeddings)")
+        else:
+            st.warning("Ollama: ⚠️ Not responding")
+    except:
+        st.error("Ollama: ❌ Not running (start with: ollama serve)")
 
     st.divider()
 

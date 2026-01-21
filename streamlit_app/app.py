@@ -13,7 +13,6 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 # Check API keys from environment
 DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
-JINA_API_KEY = os.environ.get("JINA_API_KEY", "")
 
 from services.graphrag_service import GraphRAGService
 from components.chat import render_chat
@@ -77,21 +76,14 @@ def main():
     st.title("🔬 GraphRAG Knowledge Base")
 
     # API Keys status
-    col1, col2 = st.columns(2)
-    with col1:
-        if DEEPSEEK_API_KEY:
-            st.success("🔑 DeepSeek API: OK")
-        else:
-            st.error("🔑 DeepSeek API: Missing (set DEEPSEEK_API_KEY)")
-    with col2:
-        if JINA_API_KEY:
-            st.success("🔑 Jina API: OK")
-        else:
-            st.error("🔑 Jina API: Missing (set JINA_API_KEY)")
+    if DEEPSEEK_API_KEY:
+        st.success("🔑 DeepSeek API: OK | 🖥️ Ollama embeddings (local)")
+    else:
+        st.error("🔑 DeepSeek API: Missing (set DEEPSEEK_API_KEY)")
 
     # Status indicator
-    if not DEEPSEEK_API_KEY or not JINA_API_KEY:
-        st.warning("⚠️ Set API keys as environment variables before running")
+    if not DEEPSEEK_API_KEY:
+        st.warning("⚠️ Set DEEPSEEK_API_KEY environment variable before running")
     elif st.session_state.indexing_in_progress:
         st.warning("⏳ Indexing in progress...")
     elif st.session_state.index_ready:

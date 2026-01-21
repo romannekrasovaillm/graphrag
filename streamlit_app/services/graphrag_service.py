@@ -12,9 +12,8 @@ import yaml
 
 logger = logging.getLogger(__name__)
 
-# API keys from environment
+# API key from environment
 DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
-JINA_API_KEY = os.environ.get("JINA_API_KEY", "")
 
 
 class GraphRAGService:
