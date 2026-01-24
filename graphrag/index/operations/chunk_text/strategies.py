@@ -24,7 +24,9 @@ def get_encoding_fn(encoding_name):
     def encode(text: str) -> list[int]:
         if not isinstance(text, str):
             text = f"{text}"
-        return enc.encode(text)
+        # Allow special tokens to be encoded as normal text to handle documents
+        # that may contain tokens like <|endoftext|> from AI-generated content
+        return enc.encode(text, disallowed_special=())
 
     def decode(tokens: list[int]) -> str:
         return enc.decode(tokens)
