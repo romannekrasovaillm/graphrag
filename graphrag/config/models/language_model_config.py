@@ -153,9 +153,16 @@ class LanguageModelConfig(BaseModel):
         KeyError
             If the model name is not recognized.
         """
+        # Skip encoding model lookup for all embedding types since embeddings don't need token counting
+        embedding_types = {
+            ModelType.Embedding,
+            ModelType.OpenAIEmbedding,
+            ModelType.AzureOpenAIEmbedding,
+            ModelType.MockEmbedding,
+        }
         if (
             self.type != ModelType.Chat
-            and self.type != ModelType.Embedding
+            and self.type not in embedding_types
             and self.encoding_model.strip() == ""
         ):
             self.encoding_model = tiktoken.encoding_name_for_model(self.model)
